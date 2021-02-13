@@ -1,5 +1,6 @@
 import hashlib
 import json
+import requests
 from textwrap import dedent
 from time import time
 from uuid import uuid4
@@ -106,20 +107,21 @@ class Blockchain(object):
 
     return True
 
-    def resolve_conflicts(self):
-      """
-        Consensus algorithm: resolve conflicts by replacing our chain with the longest one in the network
-        :return: <bool> True if the chain was replaced, otherwise False
-      """
+  def resolve_conflicts(self):
+    """
+      Consensus algorithm: resolve conflicts by replacing our chain with the longest one in the network
+      :return: <bool> True if the chain was replaced, otherwise False
+    """
 
-      community = self.nodes
-      new_chain = None
+    community = self.nodes
+    new_chain = None
 
-      # compare length of chains to find the largest one
-      max_length = len(self.chain)
+    # compare length of chains to find the largest one
+    max_length = len(self.chain)
 
-      # fetch and verify all nodes in our network for node in community
-      response = request.get(f'http://{node}/chain')
+    # fetch and verify all nodes in our network for node in community
+    for node in community:
+      response = requests.get(f'http://{node}/chain')
 
       if response.status_code == 200:
         length = response.json()['length']
@@ -207,7 +209,6 @@ def mine():
 @app.route('/transactions/new', methods=['POST'])
 def new_transaction():
   values = request.get_json()
-  print(values)
   # check that the required fields are in the POSTed data
   required = ['sender', 'recipient', 'amount']
   if not all(k in values for k in required):
@@ -227,9 +228,6 @@ def full_chain():
   }
   return jsonify(response), 200
 
-if __name__ == '__main__':
-  app.run(host='0.0.0.0', port=4000)
-
 @app.route('/nodes/register', methods=['POST'])
 def register_nodes():
   values = request.get_json()
@@ -243,7 +241,7 @@ def register_nodes():
 
     response = {
       'message': 'new nodes added',
-      'total_nodes': list(blockchain.nodes)
+      'nodes': list(blockchain.nodes)
     }
     return jsonify(response), 201
 
@@ -264,3 +262,5 @@ def consensus():
   
   return jsonify(response), 200
   
+if __name__ == '__main__':
+  app.run(host='0.0.0.0', port=4000)
