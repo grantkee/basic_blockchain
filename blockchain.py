@@ -3,6 +3,7 @@ import json
 from textwrap import dedent
 from time import time
 from uuid import uuid4
+from urllib.parse import urlparse
 
 from flask import Flask, jsonify, request
 
@@ -10,9 +11,20 @@ class Blockchain(object):
   def __init__(self):
     self.current_transactions = []
     self.chain = []
+    self.nodes = set()
 
     # create genesis block
     self.new_block(previous_hash = 1, proof = 100)
+
+  def register_node(self, address):
+    """
+    Add a new node to the list of nodes
+    :param address: <str> Address of node: ip/uri
+    :return: None
+    """
+
+    parse_uri = urlparse(address)
+    self.nodes.add(parse_uri.netloc)
 
   def new_block(self, proof, previous_hash = None):
     """
